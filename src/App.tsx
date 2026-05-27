@@ -121,39 +121,78 @@ export default function App() {
         const rawMetarMap: { [icao: string]: string } = {};
         let successSources: string[] = [];
 
-        // Method A: VATSIM (CORS-enabled by default, super fast, highly reliable for METARs)
+        // Method A: Official met.vatm.vn (CORS-enabled public weather query service for VATM Vietnam)
         try {
-          console.log('Attempting fetch from VATSIM CORS-enabled METAR database...');
-          const vatsimResults = await Promise.all(
-            icaos.map(async (icao) => {
-              try {
-                const res = await fetch(`https://metar.vatsim.net/${icao}`);
-                if (res.ok) {
-                  const text = await res.text();
-                  if (text && text.trim() && text.startsWith(icao)) {
-                    return { icao, metar: text.trim() };
-                  }
-                }
-              } catch (_) {}
-              return { icao, metar: null };
+          console.log('Attempting fetch from official met.vatm.vn database feed...');
+          const vatmRes = await fetch("https://apiv2.navy01.com/flightv1/feed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              handler: "metar",
+              resolver: "query",
+              payload: {
+                filters: [{ key: "country", val: "VV", op: "==", type: "string" }],
+                sorts: [{ key: "timestamp", dir: "DESC" }],
+                limit: 100,
+                offset: 0
+              }
             })
-          );
-          
-          vatsimResults.forEach(item => {
-            if (item.metar) {
-              rawMetarMap[item.icao] = item.metar;
-            }
           });
 
-          const gotCount = Object.keys(rawMetarMap).length;
-          if (gotCount > 0) {
-            successSources.push(`VATSIM (${gotCount} trạm)`);
+          if (vatmRes.ok) {
+            const vatmData = await vatmRes.json();
+            if (vatmData && Array.isArray(vatmData.items)) {
+              vatmData.items.forEach((item: any) => {
+                if (item.icao && item.text) {
+                  rawMetarMap[item.icao.toUpperCase()] = item.text.trim();
+                }
+              });
+              const gotCount = Object.keys(rawMetarMap).length;
+              if (gotCount > 0) {
+                successSources.push(`VATM Live (${gotCount} trạm)`);
+              }
+            }
           }
-        } catch (vatsimErr) {
-          console.warn('VATSIM fetch failed:', vatsimErr);
+        } catch (vatmErr) {
+          console.warn('Official VATM feed fetch failed, trying fallbacks:', vatmErr);
         }
 
-        // Method B: CORSProxy.io for NOAA (if any stations are missing)
+        // Method B: VATSIM (CORS-enabled by default, super fast, highly reliable for METARs)
+        const missingIcaosAfterVatm = icaos.filter(icao => !rawMetarMap[icao]);
+        if (missingIcaosAfterVatm.length > 0) {
+          try {
+            console.log('Attempting fetch from VATSIM CORS-enabled METAR database for missing:', missingIcaosAfterVatm);
+            const vatsimResults = await Promise.all(
+              missingIcaosAfterVatm.map(async (icao) => {
+                try {
+                  const res = await fetch(`https://metar.vatsim.net/${icao}`);
+                  if (res.ok) {
+                    const text = await res.text();
+                    if (text && text.trim() && text.startsWith(icao)) {
+                      return { icao, metar: text.trim() };
+                    }
+                  }
+                } catch (_) {}
+                return { icao, metar: null };
+              })
+            );
+            
+            vatsimResults.forEach(item => {
+              if (item.metar) {
+                rawMetarMap[item.icao] = item.metar;
+              }
+            });
+
+            const gotCount = Object.keys(rawMetarMap).length - (icaos.length - missingIcaosAfterVatm.length);
+            if (gotCount > 0) {
+              successSources.push(`VATSIM (${gotCount} trạm)`);
+            }
+          } catch (vatsimErr) {
+            console.warn('VATSIM fetch failed:', vatsimErr);
+          }
+        }
+
+        // Method C: CORSProxy.io for NOAA (if any stations are still missing)
         const missingIcaosAfterVatsim = icaos.filter(icao => !rawMetarMap[icao]);
         if (missingIcaosAfterVatsim.length > 0) {
           try {

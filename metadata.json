@@ -1,0 +1,6 @@
+{
+  "name": "Aviation Weather Vietnam",
+  "description": "Hệ thống quản lý nội dung và cập nhật thời tiết hàng không thời gian thực các sân bay Việt Nam, tự động dịch mã METAR trực quan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

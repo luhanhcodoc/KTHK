@@ -1,0 +1,24 @@
+{
+  "airports": [
+    { "id": "1", "name": "Sân bay Đà Nẵng", "icao": "VVDN", "iata": "DAD", "region": "Trung", "priority": 1, "enabled": true, "customNotes": "Mở rộng giám sát mùa mưa bão miền Trung." },
+    { "id": "2", "name": "Sân bay Chu Lai", "icao": "VVCA", "iata": "VCL", "region": "Trung", "priority": 2, "enabled": true, "customNotes": "Giám sát sương mù ven biển Quảng Nam." },
+    { "id": "3", "name": "Sân bay Phù Cát", "icao": "VVPC", "iata": "UIH", "region": "Trung", "priority": 3, "enabled": true, "customNotes": "Giám sát gió giật mạnh thung lũng." },
+    { "id": "4", "name": "Sân bay Pleiku", "icao": "VVPK", "iata": "PXU", "region": "Trung", "priority": 4, "enabled": true, "customNotes": "Độ cao lớn, cần theo dõi sát mây Tây Nguyên." },
+    { "id": "5", "name": "Sân bay Đồng Hới", "icao": "VVDH", "iata": "VDH", "region": "Trung", "priority": 5, "enabled": true },
+    { "id": "6", "name": "Sân bay Tuy Hòa", "icao": "VVTH", "iata": "TBB", "region": "Trung", "priority": 6, "enabled": true },
+    { "id": "7", "name": "Sân bay Cam Ranh", "icao": "VVCR", "iata": "CXR", "region": "Trung", "priority": 7, "enabled": true },
+    { "id": "8", "name": "Sân bay Tân Sơn Nhất", "icao": "VVTS", "iata": "SGN", "region": "Nam", "priority": 8, "enabled": true, "customNotes": "Hàng không nhộn nhịp nhất. Giám sát dông sét chiều tối dông nhiệt." },
+    { "id": "9", "name": "Sân bay Nội Bài", "icao": "VVNB", "iata": "HAN", "region": "Bắc", "priority": 9, "enabled": true, "customNotes": "Giám sát hiện tượng mù khô sương mù đông xuân Bắc Bộ." },
+    { "id": "10", "name": "Sân bay Cát Bi", "icao": "VVCI", "iata": "HPH", "region": "Bắc", "priority": 10, "enabled": true },
+    { "id": "11", "name": "Sân bay Phú Quốc", "icao": "VVPQ", "iata": "PQC", "region": "Nam", "priority": 11, "enabled": true },
+    { "id": "12", "name": "Sân bay Vinh", "icao": "VVVH", "iata": "VII", "region": "Bắc", "priority": 12, "enabled": true },
+    { "id": "13", "name": "Sân bay Liên Khương", "icao": "VVLK", "iata": "DLI", "region": "Trung", "priority": 13, "enabled": true },
+    { "id": "14", "name": "Sân bay Cần Thơ", "icao": "VVCT", "iata": "VCA", "region": "Nam", "priority": 14, "enabled": true }
+  ],
+  "thresholds": {
+    "tempAlertThreshold": 36,
+    "visibilityAlertThreshold": 5.0,
+    "extremePhenomenaCodes": ["TS", "RA", "FG", "SQ", "FC", "GR"]
+  },
+  "lastUpdated": "2026-05-27T04:37:15Z"
+}

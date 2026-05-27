@@ -166,34 +166,64 @@ app.get("/api/weather", async (req, res) => {
       rawMetarData = weatherCache.data;
     } else {
       try {
-        console.log("Fetching live METAR data from aviationweather.gov service...");
-        const icaoParam = icaos.join(",");
-        const response = await fetch(`https://aviationweather.gov/api/data/metar?ids=${icaoParam}`);
-        
-        if (response.ok) {
-          const text = await response.text();
-          // NOAA response is newline separated raw metar strings, beginning with ICAO
-          const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-          
-          lines.forEach(line => {
-            // Find which ICAO this line belongs to
-            const firstWord = line.split(" ")[0];
-            const matchedAirport = sortedAirports.find(ap => ap.icao === firstWord);
-            if (matchedAirport) {
-              rawMetarData[matchedAirport.icao] = line;
+        console.log("Fetching live METAR data from met.vatm.vn official API...");
+        const vatmResponse = await fetch("https://apiv2.navy01.com/flightv1/feed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            handler: "metar",
+            resolver: "query",
+            payload: {
+              filters: [{ key: "country", val: "VV", op: "==", type: "string" }],
+              sorts: [{ key: "timestamp", dir: "DESC" }],
+              limit: 100,
+              offset: 0
             }
-          });
-          
+          })
+        });
+
+        if (vatmResponse.ok) {
+          const vatmData = await vatmResponse.json();
+          if (vatmData && Array.isArray(vatmData.items)) {
+            vatmData.items.forEach((item: any) => {
+              if (item.icao && item.text) {
+                rawMetarData[item.icao.toUpperCase()] = item.text.trim();
+              }
+            });
+            console.log(`Successfully fetched ${Object.keys(rawMetarData).length} METARs from met.vatm.vn API.`);
+          }
+        } else {
+          console.warn(`VATM API returned status ${vatmResponse.status}, passing to NOAA fallback...`);
+        }
+
+        // Fetch remaining requested ICAOs from aviationweather.gov (NOAA)
+        const missingIcaos = icaos.filter(icao => !rawMetarData[icao]);
+        if (missingIcaos.length > 0) {
+          console.log(`Fetching ${missingIcaos.length} missing ICAOs from aviationweather.gov fallback...`);
+          const response = await fetch(`https://aviationweather.gov/api/data/metar?ids=${missingIcaos.join(",")}`);
+          if (response.ok) {
+            const text = await response.text();
+            const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+            lines.forEach(line => {
+              const firstWord = line.split(" ")[0];
+              if (missingIcaos.includes(firstWord)) {
+                rawMetarData[firstWord] = line;
+              }
+            });
+          }
+        }
+
+        if (Object.keys(rawMetarData).length > 0) {
           // Save in cache
           weatherCache = {
             timestamp: now,
             data: rawMetarData
           };
         } else {
-          throw new Error("HTTP request to aviation weather feed failed with status " + response.status);
+          throw new Error("No weather stations retrieved from both VATM and NOAA feeds.");
         }
       } catch (externalError) {
-        console.warn("External fetch failed, trying fallback / internal mock generators:", externalError);
+        console.warn("External fetch failed, trying fallback to last cached data:", externalError);
         // If external API has transient network error, use cached or mock realistic reports
         rawMetarData = weatherCache.data;
       }
